@@ -7,6 +7,7 @@ from mxnet import autograd, gluon, init, nd
 from mxnet.gluon import data as gdata, loss as gloss, nn
 import numpy as np
 import pandas as pd
+import time
 
 train_data = pd.read_csv('../../data/house/train.csv')
 test_data = pd.read_csv('../../data/house/test.csv')
@@ -37,18 +38,21 @@ train_labels = nd.array(train_data.SalePrice.values).reshape((-1, 1))
 
 loss = gloss.L2Loss()
 
-def get_net(drop_prob1, drop_prob2):
-    net = nn.Sequential()
-    net.add(nn.Dense(1))
+def get_net(drop_prob1, drop_prob2, drop_prob3):
+    net = nn.HybridSequential()
+    # net.add(nn.Dense(1))
     # net.initialize()
     # net = nn.Sequential()
-    # net.add(nn.Dense(1, activation="relu"),
+    net.add(nn.Dense(256, activation="relu"),
             # Add a dropout layer after the first fully connected layer
-            # nn.Dropout(drop_prob1),
-            # nn.Dense(1, activation="relu"),
+            nn.Dropout(drop_prob1),
+            nn.Dense(128, activation="relu"),
             # Add a dropout layer after the second fully connected layer
-            # nn.Dropout(drop_prob2),
-            # nn.Dense(1))
+            nn.Dropout(drop_prob2),
+            nn.Dense(64, activation="relu"),
+            # Add a dropout layer after the second fully connected layer
+            nn.Dropout(drop_prob3),
+            nn.Dense(1))
     net.initialize(init.Normal(sigma=0.01))
     return net
 
@@ -99,27 +103,28 @@ def get_k_fold_data(k, i, X, y):
 
 
 def k_fold(k, X_train, y_train, num_epochs,
-           learning_rate, weight_decay, batch_size, drop_prob1, drop_prob2):
+           learning_rate, weight_decay, batch_size, drop_prob1, drop_prob2, drop_prob3, hybridize):
     train_l_sum, valid_l_sum = 0, 0
     for i in range(k):
         data = get_k_fold_data(k, i, X_train, y_train)
-        net = get_net(drop_prob1, drop_prob2)
+        net = get_net(drop_prob1, drop_prob2, drop_prob3)
+        if hybridize:
+            net.hybridize()
         train_ls, valid_ls = train(net, *data, num_epochs, learning_rate,
                                    weight_decay, batch_size)
         train_l_sum += train_ls[-1]
         valid_l_sum += valid_ls[-1]
-        if i == 0:
-            d2l.semilogy(range(1, num_epochs + 1), train_ls, 'epochs', 'rmse',
-                         range(1, num_epochs + 1), valid_ls,
-                         ['train', 'valid'])
+        # if i == 0:
+        #     d2l.semilogy(range(1, num_epochs + 1), train_ls, 'epochs', 'rmse',
+        #                  range(1, num_epochs + 1), valid_ls,
+        #                  ['train', 'valid'])
         print('fold %d, train rmse: %f, valid rmse: %f' % (
             i, train_ls[-1], valid_ls[-1]))
     return train_ls, valid_ls
     # return train_l_sum / k, valid_l_sum / k
 
 
-k, num_epochs, lr, weight_decay, batch_size = 10, 1000, 0.1, 0, 64
-drop_prob1, drop_prob2 = 0.2, 0.5
+
 # train_l, valid_l = k_fold(k, train_features, train_labels, num_epochs, lr,
 #                           weight_decay, batch_size, drop_prob1, drop_prob2)
 # print('%d-fold validation: avg train rmse: %f, avg valid rmse: %f'
@@ -127,13 +132,15 @@ drop_prob1, drop_prob2 = 0.2, 0.5
 
 
 def train_and_pred(train_features, test_feature, train_labels, test_data,
-                   num_epochs, lr, weight_decay, batch_size, drop_prob1, drop_prob2):
-    net = get_net(drop_prob1, drop_prob2)
-    train_ls, _ = train(net, train_features, train_labels, None, None,
-                        num_epochs, lr, weight_decay, batch_size)
-    # train_ls, _ = k_fold(k, train_features, train_labels, num_epochs, lr,
-    #                       weight_decay, batch_size, drop_prob1, drop_prob2)
-    d2l.semilogy(range(1, num_epochs + 1), train_ls, 'epochs', 'rmse')
+                   num_epochs, lr, weight_decay, batch_size, drop_prob1, drop_prob2, drop_prob3, hybridize):
+    net = get_net(drop_prob1, drop_prob2, drop_prob3)
+    if hybridize:
+        net.hybridize()
+    # train_ls, _ = train(net, train_features, train_labels, None, None,
+    #                     num_epochs, lr, weight_decay, batch_size)
+    train_ls, _ = k_fold(k, train_features, train_labels, num_epochs, lr,
+                          weight_decay, batch_size, drop_prob1, drop_prob2, drop_prob3, hybridize)
+    # d2l.semilogy(range(1, num_epochs + 1), train_ls, 'epochs', 'rmse')
     print('train rmse %f' % train_ls[-1])
     # Apply the network to the test set
     preds = net(test_features).asnumpy()
@@ -143,5 +150,18 @@ def train_and_pred(train_features, test_feature, train_labels, test_data,
     submission.to_csv('../../data/house/submission.csv', index=False)
 
 
+k, num_epochs, lr, weight_decay, batch_size = 10, 1000, 0.1, 0, 64
+drop_prob1, drop_prob2, drop_prob3 = 0.2, 0.3, 0.5
+
+start = time.time()
 train_and_pred(train_features, test_features, train_labels, test_data,
-               num_epochs, lr, weight_decay, batch_size, drop_prob1, drop_prob2)
+               num_epochs, lr, weight_decay, batch_size, drop_prob1, drop_prob2, drop_prob3, False)
+print(time.time() - start)
+
+
+start = time.time()
+train_and_pred(train_features, test_features, train_labels, test_data,
+               num_epochs, lr, weight_decay, batch_size, drop_prob1, drop_prob2, drop_prob3, True)
+print(time.time() - start)
+
+
