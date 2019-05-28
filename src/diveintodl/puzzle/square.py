@@ -1,6 +1,7 @@
-from mxnet import  nd
+from mxnet import nd
 import numpy as np
 import threading
+import multiprocessing
 import time
 
 
@@ -52,7 +53,7 @@ class Square:
         return self.count
 
     def recursion_loop(self, weight, matrix, length, target_sum, i, j):
-        if i < length -1:
+        if i < length:
             print('-'.join([''.join(['{:2}'.format(int(item)) for item in row]) for row in matrix.asnumpy()])
                   + '|%d-%d|???/%d-%d|%d'
                   % (i, j, target_sum, self.count, time.time() - self.start))
@@ -83,79 +84,30 @@ class MultiSquare:
         self.length = length
         self.target_average = target_average
 
-    def run_a_tenth(self, number):
+    def run_a_tenth(self, number, return_dict):
         self.results[number] = Square(number, number, time.time()).count_square(self.length, self.target_average)
-        print("## TOTAL: %d" % self.results[number].asscalar())
-
-    def run_zero(self):
-        self.run_a_tenth(0)
-
-    def run_one(self):
-        self.run_a_tenth(1)
-
-    def run_two(self):
-        self.run_a_tenth(2)
-
-    def run_three(self):
-        self.run_a_tenth(3)
-
-    def run_four(self):
-        self.run_a_tenth(4)
-
-    def run_five(self):
-        self.run_a_tenth(5)
-
-    def run_six(self):
-        self.run_a_tenth(6)
-
-    def run_seven(self):
-        self.run_a_tenth(7)
-
-    def run_eight(self):
-        self.run_a_tenth(8)
-
-    def run_nine(self):
-        self.run_a_tenth(9)
-
+        total = self.results[number].asscalar()
+        print("## TOTAL: %d" % total)
+        return_dict[number] = total
+        return total
 
     def run(self):
-        t0 = threading.Thread(target=self.run_zero, name='t0')
-        t1 = threading.Thread(target=self.run_one, name='t1')
-        t2 = threading.Thread(target=self.run_two, name='t2')
-        t3 = threading.Thread(target=self.run_three, name='t3')
-        t4 = threading.Thread(target=self.run_four, name='t4')
-        t5 = threading.Thread(target=self.run_five, name='t5')
-        t6 = threading.Thread(target=self.run_six, name='t6')
-        t7 = threading.Thread(target=self.run_seven, name='t7')
-        t8 = threading.Thread(target=self.run_eight, name='t8')
-        t9 = threading.Thread(target=self.run_nine, name='t9')
-        t0.start()
-        t1.start()
-        t2.start()
-        t3.start()
-        t4.start()
-        t5.start()
-        t6.start()
-        t7.start()
-        t8.start()
-        t9.start()
+        manager = multiprocessing.Manager()
+        return_dict = manager.dict()
+        jobs = []
 
-        # wait until all threads finish
-        t0.join()
-        t1.join()
-        t2.join()
-        t3.join()
-        t4.join()
-        t5.join()
-        t6.join()
-        t7.join()
-        t8.join()
-        t9.join()
+        for i in range(10):
+            p = multiprocessing.Process(target=self.run_a_tenth, args=(i, return_dict))
+            jobs.append(p)
+            p.start()
 
-        print("## TOTAL OVERALL: %d" % (nd.sum(self.results).asscalar()))
+        for proc in jobs:
+            proc.join()
+
+        print("## TOTAL OVERALL: %d" % (sum(return_dict.values())))
 
 
-MultiSquare(2, 10).run()
-count = Square(0, 9, time.time()).count_square(2, 10)
-print("## TOTAL: %d" % count)
+MultiSquare(11, 110).run()
+# count = Square(0, 9, time.time()).count_square(2, 10)
+# print("## TOTAL: %d" % count)
 
