@@ -102,14 +102,14 @@ class Square:
 
 class MultiSquare:
 
-    results = nd.zeros(10)
+    results = nd.zeros(shape=(10, 1))
 
     def __init__(self, length, target_average):
         self.length = length
         self.target_average = target_average
 
     def run_a_tenth(self, number, return_dict):
-        self.results[number] = Square(number, number, time.time()).count_square(self.length, self.target_average)
+        self.results[number][0] = Square(number, number, time.time()).count_square(self.length, self.target_average)
         total = self.results[number].asscalar()
         print("## TOTAL: %d" % total)
         return_dict[number] = total
@@ -131,7 +131,7 @@ class MultiSquare:
         print("## TOTAL OVERALL: %d" % (sum(return_dict.values())))
 
 
-MultiSquare(2, 20).run()
+MultiSquare(11, 110).run()
 # count = Square(0, 9, time.time()).count_square(2, 20)
 # print("## TOTAL: %d" % count)
 
