@@ -40,6 +40,7 @@ class Square:
 
     def count_square(self, length, target_average):
         weight = self.matrix_path_per_step(length)
+        print(weight)
         matrix_init = nd.ones(shape=(length, length))
         target_sum = target_average * weight[0][0]
         first = self.min
@@ -50,14 +51,19 @@ class Square:
         return self.count
 
     def recursion_loop(self, weight, matrix, length, target_sum, i, j):
+        if i < length -1:
+            print('-'.join([''.join(['{:2}'.format(int(item)) for item in row]) for row in matrix.asnumpy()])
+                  + '|%d-%d|???/%d-%d|%d'
+                  % (i, j, target_sum, self.count, time.time() - self.start))
         for v in range(9):
             matrix[i][j] = v + 1
             current_average = self.sum_all_paths(weight, matrix)
             if current_average == target_sum:
                 self.count += 1
-                print(' -'.join([''.join(['{:4}'.format(int(item)) for item in row]) for row in matrix.asnumpy()])
-                      + ' | %d-%d:%d | %f/%d - %d | %d'
-                      % (i, j, v+1, current_average, target_sum, self.count, time.time() - self.start))
+                if self.count % 100 == 1:
+                    print('-'.join([''.join(['{:2}'.format(int(item)) for item in row]) for row in matrix.asnumpy()])
+                          + '|%d-%d|%d/%d-%d|%d'
+                          % (i, j, current_average, target_sum, self.count, time.time() - self.start))
                 return
             elif current_average < target_sum:
                 i2, j2 = self.increment(i, j, length)
@@ -69,53 +75,56 @@ class Square:
 
 
 class MultiSquare:
-    n_zero_to_two = 0
-    n_three_to_five = 0
-    n_six_to_seven = 0
-    n_eight_to_nine = 0
+
+    results = nd.zeros(10)
 
     def __init__(self, length, target_average):
         self.length = length
         self.target_average = target_average
 
-    def zero_to_two(self):
-        self.n_zero_to_two = Square(0, 2, time.time()).count_square(self.length, self.target_average)
-        print("## TOTAL: %d" % self.n_zero_to_two)
-
-    def three_to_five(self):
-        self.n_three_to_five = Square(3, 5, time.time()).count_square(self.length, self.target_average)
-        print("## TOTAL: %d" % self.n_three_to_five)
-
-    def six_to_seven(self):
-        self.n_six_to_seven = Square(6, 7, time.time()).count_square(self.length, self.target_average)
-        print("## TOTAL: %d" % self.n_six_to_seven)
-
-    def eight_to_nine(self):
-        self.n_eight_to_nine = Square(8, 9, time.time()).count_square(self.length, self.target_average)
-        print("## TOTAL: %d" % self.n_eight_to_nine)
+    def run_a_tenth(self, number):
+        self.results[number] = Square(number, number, time.time()).count_square(self.length, self.target_average)
+        print("## TOTAL: %d" % self.results[number].asscalar())
 
     def run(self):
-        t1 = threading.Thread(target=self.zero_to_two, name='t1')
-        t2 = threading.Thread(target=self.three_to_five, name='t2')
-        t3 = threading.Thread(target=self.six_to_seven, name='t3')
-        t4 = threading.Thread(target=self.eight_to_nine, name='t4')
+        t0 = threading.Thread(target=self.run_a_tenth(0), name='t0')
+        t1 = threading.Thread(target=self.run_a_tenth(1), name='t1')
+        t2 = threading.Thread(target=self.run_a_tenth(2), name='t2')
+        t3 = threading.Thread(target=self.run_a_tenth(3), name='t3')
+        t4 = threading.Thread(target=self.run_a_tenth(4), name='t4')
+        t5 = threading.Thread(target=self.run_a_tenth(5), name='t5')
+        t6 = threading.Thread(target=self.run_a_tenth(6), name='t6')
+        t7 = threading.Thread(target=self.run_a_tenth(7), name='t7')
+        t8 = threading.Thread(target=self.run_a_tenth(8), name='t8')
+        t9 = threading.Thread(target=self.run_a_tenth(9), name='t9')
 
         # starting threads
+        t0.start()
         t1.start()
         t2.start()
         t3.start()
         t4.start()
+        t5.start()
+        t6.start()
+        t7.start()
+        t8.start()
+        t9.start()
 
         # wait until all threads finish
+        t0.join()
         t1.join()
         t2.join()
         t3.join()
         t4.join()
+        t5.join()
+        t6.join()
+        t7.join()
+        t8.join()
+        t9.join()
 
-        print("## TOTAL OVERALL: %d" % (self.n_zero_to_two + self.n_three_to_five
-                                        + self.n_six_to_seven + self.n_eight_to_nine))
+        print("## TOTAL OVERALL: %d" % (nd.sum(self.results).asscalar()))
 
 
-MultiSquare(3, 20).run()
-# count = Square(0, 9, time.time()).count_square(2, 20)
+MultiSquare(2, 10).run()
+# count = Square(0, 9, time.time()).count_square(2, 10)
 # print("## TOTAL: %d" % count)
