@@ -3,6 +3,7 @@ import numpy as np
 import threading
 import time
 
+
 class Square:
     count = 0
 
@@ -86,19 +87,48 @@ class MultiSquare:
         self.results[number] = Square(number, number, time.time()).count_square(self.length, self.target_average)
         print("## TOTAL: %d" % self.results[number].asscalar())
 
-    def run(self):
-        t0 = threading.Thread(target=self.run_a_tenth(0), name='t0')
-        t1 = threading.Thread(target=self.run_a_tenth(1), name='t1')
-        t2 = threading.Thread(target=self.run_a_tenth(2), name='t2')
-        t3 = threading.Thread(target=self.run_a_tenth(3), name='t3')
-        t4 = threading.Thread(target=self.run_a_tenth(4), name='t4')
-        t5 = threading.Thread(target=self.run_a_tenth(5), name='t5')
-        t6 = threading.Thread(target=self.run_a_tenth(6), name='t6')
-        t7 = threading.Thread(target=self.run_a_tenth(7), name='t7')
-        t8 = threading.Thread(target=self.run_a_tenth(8), name='t8')
-        t9 = threading.Thread(target=self.run_a_tenth(9), name='t9')
+    def run_zero(self):
+        self.run_a_tenth(0)
 
-        # starting threads
+    def run_one(self):
+        self.run_a_tenth(1)
+
+    def run_two(self):
+        self.run_a_tenth(2)
+
+    def run_three(self):
+        self.run_a_tenth(3)
+
+    def run_four(self):
+        self.run_a_tenth(4)
+
+    def run_five(self):
+        self.run_a_tenth(5)
+
+    def run_six(self):
+        self.run_a_tenth(6)
+
+    def run_seven(self):
+        self.run_a_tenth(7)
+
+    def run_eight(self):
+        self.run_a_tenth(8)
+
+    def run_nine(self):
+        self.run_a_tenth(9)
+
+
+    def run(self):
+        t0 = threading.Thread(target=self.run_zero, name='t0')
+        t1 = threading.Thread(target=self.run_one, name='t1')
+        t2 = threading.Thread(target=self.run_two, name='t2')
+        t3 = threading.Thread(target=self.run_three, name='t3')
+        t4 = threading.Thread(target=self.run_four, name='t4')
+        t5 = threading.Thread(target=self.run_five, name='t5')
+        t6 = threading.Thread(target=self.run_six, name='t6')
+        t7 = threading.Thread(target=self.run_seven, name='t7')
+        t8 = threading.Thread(target=self.run_eight, name='t8')
+        t9 = threading.Thread(target=self.run_nine, name='t9')
         t0.start()
         t1.start()
         t2.start()
@@ -126,5 +156,6 @@ class MultiSquare:
 
 
 MultiSquare(2, 10).run()
-# count = Square(0, 9, time.time()).count_square(2, 10)
-# print("## TOTAL: %d" % count)
+count = Square(0, 9, time.time()).count_square(2, 10)
+print("## TOTAL: %d" % count)
+
