@@ -76,7 +76,7 @@ class Square:
         if current_average + max_remaining[i][j] < target_sum:
             return  # We cant make it, let's skip this and get higher number before
 
-        if j < length/2:
+        if i < length/2:
             print('-'.join([''.join(['{:2}'.format(int(item)) for item in row]) for row in matrix.asnumpy()])
                   + '|%d-%d|%d/%d-%d|%d'
                   % (i, j, current_average, target_sum, self.count, time.time() - self.start))
@@ -120,8 +120,8 @@ class MultiSquare:
         return_dict = manager.dict()
         jobs = []
 
-        for i in range(10):
-            p = multiprocessing.Process(target=self.run_a_tenth, args=(i, return_dict))
+        for i in range(9):
+            p = multiprocessing.Process(target=self.run_a_tenth, args=(i+1, return_dict))
             jobs.append(p)
             p.start()
 
@@ -131,7 +131,7 @@ class MultiSquare:
         print("## TOTAL OVERALL: %d" % (sum(return_dict.values())))
 
 
-MultiSquare(11, 110).run()
+MultiSquare(2, 20).run()
 # count = Square(0, 9, time.time()).count_square(2, 20)
 # print("## TOTAL: %d" % count)
 
