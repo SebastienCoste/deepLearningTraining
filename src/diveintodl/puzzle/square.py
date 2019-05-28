@@ -73,13 +73,13 @@ class Square:
 
         current_average = self.sum_all_paths(weight, matrix)
 
-        if i < length:
+        if current_average + max_remaining[i][j] < target_sum:
+            return  # We cant make it, let's skip this and get higher number before
+
+        if j < length/2:
             print('-'.join([''.join(['{:2}'.format(int(item)) for item in row]) for row in matrix.asnumpy()])
                   + '|%d-%d|%d/%d-%d|%d'
                   % (i, j, current_average, target_sum, self.count, time.time() - self.start))
-
-        if current_average + max_remaining[i][j] < target_sum:
-            return  # We cant make it, let's skip this and get higher number before
 
         for v in range(9):
             matrix[i][j] = v + 1
