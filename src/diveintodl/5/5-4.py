@@ -20,7 +20,7 @@ print(y.mean().asscalar())
 
 params = gluon.ParameterDict()
 params.get('param2', shape=(2, 3))
-params
+print(params)
 
 
 class MyDense(nn.Block):
@@ -36,10 +36,16 @@ class MyDense(nn.Block):
         return nd.relu(linear)
 
 
+dense = MyDense(units=3, in_units=5)
+print(dense.params)
+dense.initialize()
+print(dense(nd.random.uniform(shape=(2, 5))))
 
-
-
-
+net = nn.Sequential()
+net.add(MyDense(8, in_units=64),
+        MyDense(4, in_units=8))
+net.initialize()
+print(net(nd.random.uniform(shape=(2, 64))))
 
 
 

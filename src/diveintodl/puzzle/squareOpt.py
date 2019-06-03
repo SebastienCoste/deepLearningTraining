@@ -2,6 +2,8 @@ from mxnet import nd
 import numpy as np
 import multiprocessing
 import time
+import operator as op
+from functools import reduce
 
 
 class Square:
@@ -45,10 +47,10 @@ class Square:
         for i in reversed(range(length)):
             for j in reversed(range(length)):
                 i_prev = i
-                j_prev = j+1
+                j_prev = j + 1
                 total_prev = 0
                 if j_prev == length:
-                    i_prev = i+1
+                    i_prev = i + 1
                     j_prev = 0
                 if i_prev < length:
                     total_prev = max_potential[i_prev][j_prev]
@@ -63,45 +65,92 @@ class Square:
         max_remaining = self.max_potential_remaining(weight)
         print(max_remaining)
         first = self.min
-        while first <= self.max:
-            matrix_init[0][0] = first
-            self.recursion_loop(weight, matrix_init, max_remaining, length, target_sum.asscalar(), 0, 1)
-            first += 1
-        return self.count
 
-    def recursion_loop(self, weight, matrix, max_remaining, length, target_sum, i, j):
 
-        current_average = self.sum_all_paths(weight, matrix)
 
-        if current_average + max_remaining[i][j] < target_sum:
-            return  # We cant make it, let's skip this and get higher number before
 
-        if i < length/2:
-            print('-'.join([''.join(['{:2}'.format(int(item)) for item in row]) for row in matrix.asnumpy()])
-                  + '|%d-%d|%d/%d-%d|%d'
-                  % (i, j, current_average, target_sum, self.count, time.time() - self.start))
 
-        for v in range(9):
-            matrix[i][j] = v + 1
-            current_average = self.sum_all_paths(weight, matrix)
-            if current_average == target_sum:
-                self.count += 1
-                if self.count % 100 == 1:
-                    print('-'.join([''.join(['{:2}'.format(int(item)) for item in row]) for row in matrix.asnumpy()])
-                          + '|%d-%d|%d/%d-%d|%d'
-                          % (i, j, current_average, target_sum, self.count, time.time() - self.start))
-                return
-            elif current_average < target_sum:
-                i2, j2 = self.increment(i, j, length)
-                if i2 < length:
-                    self.recursion_loop(weight, matrix.copy(), max_remaining, length, target_sum, i2, j2)
-            else:
-                return
-        return
+class Step:
+    count = 0
+    num_path = 0
+    max_remaining = 0
+    weight = 0
+
+    def __init__(self, num_path):
+        self.num_path = num_path
+        self.count = 1
+
+    def combinations(self, occurences):
+        return ncr(self.count, occurences)
+
+    def range(self):
+        for x in range(self.count * 8):
+            yield x + self.count
+
+    def inc_count(self):
+        self.count += 1
+        self.weight += 1
+
+
+class ListStep:
+    all_steps = []
+    total_path = 0
+
+    def __init__(self, matrix):
+        length = len(matrix[0])
+        self.total_path = matrix[0][0]
+        for i in range(length):
+            for j in range(length):
+                num_path = matrix[i][j]
+                element = first(x.num_path == num_path for x in self.all_steps)
+                if element is None:
+                    self.all_steps.append(Step(num_path))
+                else:
+                    element.inc_count()
+        self.compute_remaining()
+
+    def compute_remaining(self):
+        length = len(self.all_steps)
+        for i in reversed(range(length)):
+            prev_max_value = 0
+            if i < length - 1:
+                prev = self.all_steps[i+1]
+                prev_max_value = prev.max_remaining
+            current = self.all_steps[i]
+            current.max_remaining = prev_max_value + current.num_path * 9 * current.count
+
+
+def ncr(n, r):
+    r = min(r, n - r)
+    numer = reduce(op.mul, range(n, n - r, -1), 1)
+    denom = reduce(op.mul, range(1, r + 1), 1)
+    return numer / denom
+
+
+def first(iterable):
+    for element in iterable:
+        if element:
+            return element
+    return None
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class MultiSquare:
-
     results = nd.zeros(shape=(10, 1))
 
     def __init__(self, length, target_average):
@@ -121,7 +170,7 @@ class MultiSquare:
         jobs = []
 
         for i in range(9):
-            p = multiprocessing.Process(target=self.run_a_tenth, args=(i+1, return_dict))
+            p = multiprocessing.Process(target=self.run_a_tenth, args=(i + 1, return_dict))
             jobs.append(p)
             p.start()
 
